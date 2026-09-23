@@ -11,9 +11,9 @@
 #define DEBUG_STR(str) fprintf(stderr, "%s:%d:%s(): %s: %s\n", __FILE__, __LINE__, __func__, #str, (char*)(str))
 
 bool make_target(mmake_rules* rules, const char* target);
-pid_t exec_command(char** argv);
-bool exec_and_wait(char* argv[]);
-void echo_cmd(char* argv[]);
+pid_t exec_command(char *const argv[]);
+bool exec_and_wait(char *const argv[]);
+void echo_cmd(char *const argv[]);
 
 void debug_print_rule(mmake_rules* rules, const char* target);
 void debug_print_rule(mmake_rules* rules, const char* target)
@@ -112,7 +112,7 @@ bool make_target(mmake_rules* rules, const char* target)
 
     //TODO: deal with prerequisites
 
-    char** cmd = get_rule_cmd(rule);
+    char *const *cmd = get_rule_cmd(rule);
     if(!cmd) //TODO: is this condition correct? Should it be !*cmd? Maybe "if(!cmd || !*cmd)"?
     {
         printf("make: Nothing to be done for '%s'.\n", target);
@@ -136,7 +136,7 @@ bool make_target(mmake_rules* rules, const char* target)
             -1 on error
             Does not return in child process on successful exec
 */
-pid_t exec_command(char* argv[])
+pid_t exec_command(char *const argv[])
 {
     const pid_t pid = fork();
     if(pid == -1) //Error
@@ -163,7 +163,7 @@ pid_t exec_command(char* argv[])
     @return true if command process exited with status code 0
             false on error or if command process exited with non-zero status code
 */
-bool exec_and_wait(char* argv[])
+bool exec_and_wait(char *const argv[])
 {
     const pid_t pid = exec_command(argv);
     if(pid == -1) return false;
@@ -192,16 +192,16 @@ bool exec_and_wait(char* argv[])
 /*
     TODO: document
 */
-void echo_cmd(char* argv[])
+void echo_cmd(char *const argv[])
 {
     size_t buf_size = 0;
-    for(char** p = argv; *p; ++p)
+    for(char *const *p = argv; *p; ++p)
     {
         buf_size += strlen(*p) + 1;
     }
     char buf[buf_size];
     char* bp = buf;
-    for(char** p = argv; *p; ++p)
+    for(char *const *p = argv; *p; ++p)
     {
         size_t len = strlen(*p);
         memcpy(bp, *p, len);
