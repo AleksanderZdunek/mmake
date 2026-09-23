@@ -1,0 +1,3 @@
+mmake
+*.o
+mmake_parser.[c,h]

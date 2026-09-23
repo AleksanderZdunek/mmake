@@ -1,0 +1,2 @@
+mmake: mmake.o mmake_parser.o
+	gcc -o mmake mmake.o mmake_parser.o
