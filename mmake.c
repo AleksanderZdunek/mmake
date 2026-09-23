@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
     mmake_rules* rules = parse_mmakefile(file);
     if(!rules)
     {
-        fprintf(stderr, "mmake: No rule found in %s\n", filename);
+        fprintf(stderr, "mmake: error parsing %s (syntax malformed?)\n", filename);
         fclose(file);
         exit(EXIT_FAILURE);
     }
