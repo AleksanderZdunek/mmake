@@ -186,6 +186,7 @@ bool exec_and_wait(char *const argv[])
     {
         fprintf(stderr, "mmake: command terminate terminated by signal %d\n", WTERMSIG(wstatus));
     }
+    else fprintf(stderr, "mmake: exec_and_wait(): unknown error\n");
     return false;
 }
 
