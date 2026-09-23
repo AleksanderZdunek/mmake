@@ -53,12 +53,13 @@ int main(int argc, char* argv[])
                 break;
             default:
                 //TODO: Document more options
-                fprintf(stderr, "Usage: mmake [-f MMAKEFILE]\n");
+                fprintf(stderr, "Usage: mmake [-f MMAKEFILE] [TARGET ...]\n");
                 exit(EXIT_FAILURE);
                 break;
         }
-
     }
+    size_t nrof_targets = argc - optind; //Number of [TARGET ...] arguments passed on the command line
+    const char *const *targets = (const char *const *)&argv[optind];
 
     FILE* file = fopen(filename, "r");
     if(!file)
@@ -76,19 +77,22 @@ int main(int argc, char* argv[])
     }
     fclose(file);
 
-    //TODO: the rest of the program
-    const char* default_target = get_default_target(rules);
-    // debug_print_rule(rules, default_target); //TODO: clean up
-    if(make_target(rules, default_target))
+    const char* default_target;
+    if(nrof_targets == 0)
     {
-        DEBUG_STR("Target made successfully");
-        DEBUG_STR(default_target);
-    } else
-    {
-        DEBUG_STR("Error making target");
-        DEBUG_STR(default_target);
+        default_target = get_default_target(rules);
+        targets = &default_target;
+        nrof_targets = 1;
     }
-    //TODO: proper error handling
+
+    for(size_t i = 0; i < nrof_targets; ++i)
+    {
+        if(!make_target(rules, targets[i]))
+        {
+            delete_mmake_rules(rules);
+            exit(EXIT_FAILURE);
+        }
+    }
 
     delete_mmake_rules(rules);
     return 0;

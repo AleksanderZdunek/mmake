@@ -1,2 +1,11 @@
 mmake: mmake.o mmake_parser.o
 	gcc -o mmake mmake.o mmake_parser.o
+
+clean:
+	rm mmake mmake.o mmake_parser.o
+
+meep:
+	echo Meep!
+
+false:
+	false
