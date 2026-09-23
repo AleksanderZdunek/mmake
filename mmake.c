@@ -102,7 +102,6 @@ bool make_target(mmake_rules* rules, const char* target)
     rule* rule = get_target_rule(rules, target);
     if(!rule)
     {
-        DEBUG_STR("Rule not found");
         fprintf(stderr, "mmake: *** No rule to make target '%s'.  Stop.\n", target);
         return false;
     }
