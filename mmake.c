@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
 
     //TODO: the rest of the program
     const char* default_target = get_default_target(rules);
-    // debug_print_rule(rules, default_target);
+    // debug_print_rule(rules, default_target); //TODO: clean up
     if(make_target(rules, default_target))
     {
         DEBUG_STR("Target made successfully");
@@ -109,7 +109,7 @@ bool make_target(mmake_rules* rules, const char* target)
     //TODO: deal with prerequisites
 
     char** cmd = get_rule_cmd(rule);
-    if(!cmd) //TODO: is this condition correct? Should it be !*cmd?
+    if(!cmd) //TODO: is this condition correct? Should it be !*cmd? Maybe "if(!cmd || !*cmd)"?
     {
         printf("make: Nothing to be done for '%s'.\n", target);
         return true;
