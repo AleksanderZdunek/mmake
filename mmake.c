@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <sys/wait.h>
+#include <string.h>
+#include <assert.h>
 #include "mmake_parser.h"
 
 #define DEBUG_EXPR(expr) fprintf(stderr, "%s:%d:%s(): %s: 0x%llX\n", __FILE__, __LINE__, __func__, #expr, (unsigned long long)(expr))
@@ -11,6 +13,7 @@
 bool make_target(mmake_rules* rules, const char* target);
 pid_t exec_command(char** argv);
 bool exec_and_wait(char* argv[]);
+void echo_cmd(char* argv[]);
 
 void debug_print_rule(mmake_rules* rules, const char* target);
 void debug_print_rule(mmake_rules* rules, const char* target)
@@ -85,6 +88,7 @@ int main(int argc, char* argv[])
         DEBUG_STR("Error making target");
         DEBUG_STR(default_target);
     }
+    //TODO: proper error handling
 
     delete_mmake_rules(rules);
     return 0;
@@ -106,13 +110,14 @@ bool make_target(mmake_rules* rules, const char* target)
     //TODO: deal with prerequisites
 
     char** cmd = get_rule_cmd(rule);
-    if(!cmd)
+    if(!cmd) //TODO: is this condition correct? Should it be !*cmd?
     {
         printf("make: Nothing to be done for '%s'.\n", target);
         return true;
     } else
     {
-        //TODO: echo command
+        //TODO: optionally silence command echoing
+        echo_cmd(cmd);
         return exec_and_wait(cmd);
     }
 }
@@ -179,4 +184,28 @@ bool exec_and_wait(char* argv[])
         fprintf(stderr, "mmake: command terminate terminated by signal %d\n", WTERMSIG(wstatus));
     }
     return false;
+}
+
+/*
+    TODO: document
+*/
+void echo_cmd(char* argv[])
+{
+    size_t buf_size = 0;
+    for(char** p = argv; *p; ++p)
+    {
+        buf_size += strlen(*p) + 1;
+    }
+    char buf[buf_size];
+    char* bp = buf;
+    for(char** p = argv; *p; ++p)
+    {
+        size_t len = strlen(*p);
+        memcpy(bp, *p, len);
+        bp += len;
+        *(bp++) = ' ';
+    }
+    assert(bp == buf + sizeof(buf));
+    *(bp - 1) = '\0';
+    puts(buf);
 }
