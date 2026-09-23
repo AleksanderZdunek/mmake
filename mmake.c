@@ -3,6 +3,33 @@
 #include <stdlib.h>
 #include "mmake_parser.h"
 
+#define DEBUG_EXPR(expr) fprintf(stderr, "%s:%d:%s(): %s: 0x%llX\n", __FILE__, __LINE__, __func__, #expr, (unsigned long long)(expr))
+#define DEBUG_STR(str) fprintf(stderr, "%s:%d:%s(): %s: %s\n", __FILE__, __LINE__, __func__, #str, (char*)(str))
+
+static void debug_print_rule(mmake_rules* rules, const char* target)
+{
+    DEBUG_STR(target);
+
+    rule* rule = get_target_rule(rules, target);
+    if(!rule)
+    {
+        DEBUG_STR("Rule not found");
+        return;
+    }
+
+    const char** dependencies = get_rule_prereq(rule);
+    for(; *dependencies; ++dependencies)
+    {
+        DEBUG_STR(*dependencies);
+    }
+
+    char** cmd = get_rule_cmd(rule);
+    for(; *cmd; ++cmd)
+    {
+        DEBUG_STR(*cmd);
+    }
+}
+
 int main(int argc, char* argv[])
 {
     const char* filename = "mmakefile";
@@ -40,6 +67,8 @@ int main(int argc, char* argv[])
     fclose(file);
 
     //TODO: the rest of the program
+    const char* default_target = get_default_target(rules);
+    debug_print_rule(rules, default_target);
 
     delete_mmake_rules(rules);
     return 0;
