@@ -5,6 +5,9 @@
 #include <sys/wait.h>
 #include <string.h>
 #include <assert.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <stdint.h>
 #include "mmake_parser.h"
 
 #define DEBUG_EXPR(expr) fprintf(stderr, "%s:%d:%s(): %s: 0x%llX\n", __FILE__, __LINE__, __func__, #expr, (unsigned long long)(expr))
@@ -14,6 +17,9 @@ bool make_target(mmake_rules* rules, const char* target);
 pid_t exec_command(char *const argv[]);
 bool exec_and_wait(char *const argv[]);
 void echo_cmd(char *const argv[]);
+int64_t file_mod_time(const char* path);
+#define FILE_MOD_TIME_FILE_NOT_FOUND INT64_MIN
+#define FILE_MOD_TIME_ERROR (INT64_MIN + 1)
 
 void debug_print_rule(mmake_rules* rules, const char* target);
 void debug_print_rule(mmake_rules* rules, const char* target)
@@ -103,6 +109,14 @@ int main(int argc, char* argv[])
 */
 bool make_target(mmake_rules* rules, const char* target)
 {
+    bool rebuild_needed = false;
+
+    int64_t target_timestamp = file_mod_time(target);
+    if(FILE_MOD_TIME_ERROR == target_timestamp) return false;
+    if(FILE_MOD_TIME_FILE_NOT_FOUND == target_timestamp) rebuild_needed = true;
+
+    DEBUG_EXPR(rebuild_needed);
+
     rule* rule = get_target_rule(rules, target);
     if(!rule)
     {
@@ -212,4 +226,31 @@ void echo_cmd(char *const argv[])
     assert(bp == buf + sizeof(buf));
     *(bp - 1) = '\0';
     puts(buf);
+}
+
+/**
+    Return the modification time of a file
+    in UNIX time seconds.
+
+    @param path Path to file
+    @return UNIX timestamp seconds when file was last modified
+        Special values FILE_MOD_TIME_FILE_NOT_FOUND if the file was not found
+        or FILE_MOD_TIME_ERROR if some other error occurred.
+*/
+int64_t file_mod_time(const char* path)
+{
+    struct stat statbuf;
+    if(stat(path, &statbuf) == -1)
+    {
+        if(ENOENT == errno)
+        {
+            return FILE_MOD_TIME_FILE_NOT_FOUND;
+        } else
+        {
+            perror(path);
+            return FILE_MOD_TIME_ERROR;
+        }
+    }
+    //Lab spec only requires second precision
+    return statbuf.st_atim.tv_sec;
 }
