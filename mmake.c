@@ -133,7 +133,7 @@ bool make_target(mmake_rules* rules, const char* target)
         if(!make_target(rules, dep)) return false; //Something went wrong down the line
         const int64_t dep_timestamp = file_mod_time(dep);
         if(FILE_MOD_TIME_ERROR == dep_timestamp) return false;
-        if(target_timestamp <= dep_timestamp) rebuild_needed = true; //Rebuild on equal timestamps to account for only second resolution
+        if(target_timestamp < dep_timestamp) rebuild_needed = true;
     }
 
     //TODO: optionally force rebuilds
