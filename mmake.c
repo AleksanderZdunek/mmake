@@ -13,7 +13,17 @@
 #define DEBUG_EXPR(expr) fprintf(stderr, "%s:%d:%s(): %s: 0x%llX\n", __FILE__, __LINE__, __func__, #expr, (unsigned long long)(expr))
 #define DEBUG_STR(str) fprintf(stderr, "%s:%d:%s(): %s: %s\n", __FILE__, __LINE__, __func__, #str, (char*)(str))
 
-bool make_target(mmake_rules* rules, const char* target);
+enum make_status
+{
+    //TODO: is there a need for a BUILD_ERROR?
+    MAKE_ERROR          = -3,   //Something went wrong
+    MAKE_STOP           = -2,   //Target missing but there's no rule
+    NOTHING_TO_BE_DONE  = -1,   //Target exists but has no rule
+    UP_TO_DATE          = 0,    //Rule exists but target does not need rebuilding
+    MAKE_OK             = 1     //Build command executed successfully
+};
+
+enum make_status make_target(mmake_rules* rules, const char* target);
 pid_t exec_command(char *const argv[]);
 bool exec_and_wait(char *const argv[]);
 void echo_cmd(char *const argv[]);
@@ -93,26 +103,39 @@ int main(int argc, char* argv[])
 
     for(size_t i = 0; i < nrof_targets; ++i)
     {
-        if(!make_target(rules, targets[i]))
+        const char *const target = targets[i];
+        switch(make_target(rules, target))
         {
-            delete_mmake_rules(rules);
-            exit(EXIT_FAILURE);
+            case MAKE_STOP: //Fallthrough
+            case MAKE_ERROR:
+                delete_mmake_rules(rules);
+                exit(EXIT_FAILURE);
+            case NOTHING_TO_BE_DONE:
+                printf("mmake: Nothing to be done for '%s'.\n", target);
+                break;
+            case UP_TO_DATE:
+                printf("mmake: '%s' is up to date.\n", target);
+                break;
+            case MAKE_OK:
+                break;
+            default:
+                assert(false);
         }
     }
 
     delete_mmake_rules(rules);
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 /*
     TODO: document
 */
-bool make_target(mmake_rules* rules, const char* target)
+enum make_status make_target(mmake_rules* rules, const char* target)
 {
     bool rebuild_needed = false;
 
     const int64_t target_timestamp = file_mod_time(target);
-    if(FILE_MOD_TIME_ERROR == target_timestamp) return false;
+    if(FILE_MOD_TIME_ERROR == target_timestamp) return MAKE_ERROR;
     if(FILE_MOD_TIME_FILE_NOT_FOUND == target_timestamp) rebuild_needed = true;
 
     rule* rule = get_target_rule(rules, target);
@@ -121,18 +144,30 @@ bool make_target(mmake_rules* rules, const char* target)
         if(rebuild_needed)
         {
             fprintf(stderr, "mmake: *** No rule to make target '%s'.  Stop.\n", target);
-            return false;
+            return MAKE_STOP;
         }
-        return true;
+        return NOTHING_TO_BE_DONE;
     }
 
     //Check dependencies
     for(const char *const* deps = get_rule_prereq(rule); *deps; ++deps)
     {
         const char *const dep = *deps;
-        if(!make_target(rules, dep)) return false; //Something went wrong down the line
+        switch(make_target(rules, dep))
+        {
+            case MAKE_ERROR:
+                return MAKE_ERROR;
+            case MAKE_STOP:
+                return MAKE_STOP;
+            case NOTHING_TO_BE_DONE:
+            case UP_TO_DATE:
+            case MAKE_OK:
+                break;
+            default:
+                assert(false);
+        }
         const int64_t dep_timestamp = file_mod_time(dep);
-        if(FILE_MOD_TIME_ERROR == dep_timestamp) return false;
+        if(FILE_MOD_TIME_ERROR == dep_timestamp) return MAKE_ERROR;
         if(target_timestamp < dep_timestamp) rebuild_needed = true;
     }
 
@@ -146,17 +181,10 @@ bool make_target(mmake_rules* rules, const char* target)
         assert(*cmd);
         //TODO: optionally silence command echoing
         echo_cmd(cmd);
-        return exec_and_wait(cmd);
+        return exec_and_wait(cmd) ? MAKE_OK : MAKE_ERROR;
     } else
     {
-        printf("mmake: Nothing to be done for '%s'.\n", target);
-        return true;
-
-        //TODO: Figure out when and how to print the appropriate user feedback message.
-        //Apparently 'is up to date' should be printed whene there is a rule,
-        //and 'Nothing to be done' when there isn't a rule. But only on top of
-        //the recursion stack?
-        // printf("mmake: '%s' is up to date.\n", target);
+        return UP_TO_DATE;
     }
 }
 
@@ -215,10 +243,12 @@ bool exec_and_wait(char *const argv[])
         {
             return true;
         }
+        //TODO: print "make: *** [Makefile:23: false] Error 1" In appropriate place
         fprintf(stderr, "mmake: command exited with code %d\n", WEXITSTATUS(wstatus));
     }
     else if(WIFSIGNALED(wstatus))
     {
+        //TODO: print "make: *** [Makefile:23: false] Error 1" In appropriate place
         fprintf(stderr, "mmake: command terminate terminated by signal %d\n", WTERMSIG(wstatus));
     }
     else fprintf(stderr, "mmake: exec_and_wait(): unknown error\n");
