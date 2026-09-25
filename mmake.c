@@ -128,6 +128,7 @@ bool make_target(mmake_rules* rules, const char* target)
 
     char *const *cmd = get_rule_cmd(rule);
     if(!cmd) //TODO: is this condition correct? Should it be !*cmd? Maybe "if(!cmd || !*cmd)"?
+             //The mmakefile parser doesn't parse empty commands, so if there is a rule there should always be a cmd
     {
         printf("make: Nothing to be done for '%s'.\n", target);
         return true;
