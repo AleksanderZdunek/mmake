@@ -1,3 +1,6 @@
+/*
+    (C) Aleksander Zdunek <redacted>@cs.umu.se
+*/
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -42,6 +45,8 @@ struct cfg options(int argc, char* argv[]);
 
 int main(int argc, char* argv[])
 {
+    //TODO: Implements silent option
+    //TODO: Implement force_rebuild options
     struct cfg cfg = options(argc, argv);
 
     FILE* file = fopen(cfg.filename, "r");
