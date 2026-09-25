@@ -243,13 +243,11 @@ bool exec_and_wait(char *const argv[])
         {
             return true;
         }
-        //TODO: print "make: *** [Makefile:23: false] Error 1" In appropriate place
-        fprintf(stderr, "mmake: command exited with code %d\n", WEXITSTATUS(wstatus));
+        fprintf(stderr, "mmake: *** [%s] Error %d\n", argv[0], WEXITSTATUS(wstatus));
     }
     else if(WIFSIGNALED(wstatus))
     {
-        //TODO: print "make: *** [Makefile:23: false] Error 1" In appropriate place
-        fprintf(stderr, "mmake: command terminate terminated by signal %d\n", WTERMSIG(wstatus));
+        fprintf(stderr, "mmake: *** [%s] Error Signal %d\n", argv[0], WTERMSIG(wstatus));
     }
     else fprintf(stderr, "mmake: exec_and_wait(): unknown error\n");
     return false;
