@@ -15,12 +15,11 @@
 
 enum make_status
 {
-    //TODO: is there a need for a BUILD_ERROR?
-    MAKE_ERROR          = -3,   //Something went wrong
-    MAKE_STOP           = -2,   //Target missing but there's no rule
-    NOTHING_TO_BE_DONE  = -1,   //Target exists but has no rule
-    UP_TO_DATE          = 0,    //Rule exists but target does not need rebuilding
-    MAKE_OK             = 1     //Build command executed successfully
+    MAKE_OK,            //Build command executed successfully
+    UP_TO_DATE,         //Rule exists but target does not need rebuilding
+    NOTHING_TO_BE_DONE, //Target exists but has no rule
+    MAKE_ERROR,         //Something went wrong
+    MAKE_STOP = MAKE_ERROR //Target missing but there's no rule. Handled like other errors.
 };
 
 enum make_status make_target(mmake_rules* rules, const char* target);
@@ -106,10 +105,6 @@ int main(int argc, char* argv[])
         const char *const target = targets[i];
         switch(make_target(rules, target))
         {
-            case MAKE_STOP: //Fallthrough
-            case MAKE_ERROR:
-                delete_mmake_rules(rules);
-                exit(EXIT_FAILURE);
             case NOTHING_TO_BE_DONE:
                 printf("mmake: Nothing to be done for '%s'.\n", target);
                 break;
@@ -119,7 +114,10 @@ int main(int argc, char* argv[])
             case MAKE_OK:
                 break;
             default:
-                assert(false);
+                assert(false); //If NDEBUG this falls through to error
+            case MAKE_ERROR:
+                delete_mmake_rules(rules);
+                exit(EXIT_FAILURE);
         }
     }
 
@@ -153,19 +151,12 @@ enum make_status make_target(mmake_rules* rules, const char* target)
     for(const char *const* deps = get_rule_prereq(rule); *deps; ++deps)
     {
         const char *const dep = *deps;
-        switch(make_target(rules, dep))
-        {
-            case MAKE_ERROR:
-                return MAKE_ERROR;
-            case MAKE_STOP:
-                return MAKE_STOP;
-            case NOTHING_TO_BE_DONE:
-            case UP_TO_DATE:
-            case MAKE_OK:
-                break;
-            default:
-                assert(false);
-        }
+
+        //Recursively traverse the prerequisites tree.
+        //NOTE: No safety against prerequisite loops!
+        //  A dependency loop will crash with infinite recursion.
+        if(make_target(rules, dep) == MAKE_ERROR) return MAKE_ERROR;
+
         const int64_t dep_timestamp = file_mod_time(dep);
         if(FILE_MOD_TIME_ERROR == dep_timestamp) return MAKE_ERROR;
         if(target_timestamp < dep_timestamp) rebuild_needed = true;
