@@ -253,5 +253,5 @@ int64_t file_mod_time(const char* path)
         }
     }
     //Lab spec only requires second precision
-    return statbuf.st_atim.tv_sec;
+    return statbuf.st_mtim.tv_sec;
 }
