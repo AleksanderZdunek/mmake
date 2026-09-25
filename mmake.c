@@ -34,7 +34,7 @@ enum make_status
     MAKE_STOP = MAKE_ERROR //Target missing but there's no rule. Handled like other errors.
 };
 
-enum make_status make_target(mmake_rules* rules, const char* target, bool silent);
+enum make_status make_target(mmake_rules* rules, const char* target, bool force_rebuild, bool silent);
 pid_t exec_command(char *const argv[]);
 bool exec_and_wait(char *const argv[]);
 void echo_cmd(char *const argv[]);
@@ -45,7 +45,6 @@ struct cfg options(int argc, char* argv[]);
 
 int main(int argc, char* argv[])
 {
-    //TODO: Implement force_rebuild options
     struct cfg cfg = options(argc, argv);
 
     FILE* file = fopen(cfg.filename, "r");
@@ -76,7 +75,7 @@ int main(int argc, char* argv[])
     for(size_t i = 0; i < cfg.nrof_targets; ++i)
     {
         const char *const target = cfg.targets[i];
-        switch(make_target(rules, target, cfg.silent))
+        switch(make_target(rules, target, cfg.force_rebuild, cfg.silent))
         {
             case NOTHING_TO_BE_DONE:
                 printf("mmake: Nothing to be done for '%s'.\n", target);
@@ -101,10 +100,9 @@ int main(int argc, char* argv[])
 /*
     TODO: document
 */
-enum make_status make_target(mmake_rules* rules, const char* target, bool silent)
+enum make_status make_target(mmake_rules* rules, const char* target, bool force_rebuild, bool silent)
 {
     bool rebuild_needed = false;
-
     const int64_t target_timestamp = file_mod_time(target);
     if(FILE_MOD_TIME_ERROR == target_timestamp) return MAKE_ERROR;
     if(FILE_MOD_TIME_FILE_NOT_FOUND == target_timestamp) rebuild_needed = true;
@@ -128,15 +126,14 @@ enum make_status make_target(mmake_rules* rules, const char* target, bool silent
         //Recursively traverse the prerequisites tree.
         //NOTE: No safety against prerequisite loops!
         //  A dependency loop will crash with infinite recursion.
-        if(make_target(rules, dep, silent) == MAKE_ERROR) return MAKE_ERROR;
+        if(make_target(rules, dep, force_rebuild, silent) == MAKE_ERROR) return MAKE_ERROR;
 
         const int64_t dep_timestamp = file_mod_time(dep);
         if(FILE_MOD_TIME_ERROR == dep_timestamp) return MAKE_ERROR;
         if(target_timestamp < dep_timestamp) rebuild_needed = true;
     }
 
-    //TODO: optionally force rebuilds
-    if(rebuild_needed)
+    if(rebuild_needed || force_rebuild)
     {
         char *const *cmd = get_rule_cmd(rule);
         //If we have a rule we should have a command line.
@@ -274,10 +271,13 @@ struct cfg options(int argc, char* argv[])
 {
     struct cfg cfg = { .filename = "mmakefile" };
     int opt;
-    while((opt = getopt(argc, argv, "f:s")) != -1)
+    while((opt = getopt(argc, argv, "Bf:s")) != -1)
     {
         switch(opt)
         {
+            case 'B':
+                cfg.force_rebuild = true;
+                break;
             case 'f':
                 cfg.filename = optarg;
                 break;
@@ -285,8 +285,7 @@ struct cfg options(int argc, char* argv[])
                 cfg.silent = true;
                 break;
             default:
-                //TODO: Document more options
-                fprintf(stderr, "Usage: mmake [-f MMAKEFILE] [-s] [TARGET ...]\n");
+                fprintf(stderr, "Usage: mmake [-f MMAKEFILE] [-B] [-s] [TARGET ...]\n");
                 exit(EXIT_FAILURE);
                 break;
         }
