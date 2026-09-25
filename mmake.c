@@ -40,31 +40,6 @@ int64_t file_mod_time(const char* path);
 #define FILE_MOD_TIME_ERROR (INT64_MIN + 1)
 struct cfg options(int argc, char* argv[]);
 
-void debug_print_rule(mmake_rules* rules, const char* target);
-void debug_print_rule(mmake_rules* rules, const char* target)
-{
-    DEBUG_STR(target);
-
-    rule* rule = get_target_rule(rules, target);
-    if(!rule)
-    {
-        DEBUG_STR("Rule not found");
-        return;
-    }
-
-    const char** dependencies = get_rule_prereq(rule);
-    for(; *dependencies; ++dependencies)
-    {
-        DEBUG_STR(*dependencies);
-    }
-
-    char** cmd = get_rule_cmd(rule);
-    for(; *cmd; ++cmd)
-    {
-        DEBUG_STR(*cmd);
-    }
-}
-
 int main(int argc, char* argv[])
 {
     struct cfg cfg = options(argc, argv);
