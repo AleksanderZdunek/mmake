@@ -13,6 +13,15 @@
 #define DEBUG_EXPR(expr) fprintf(stderr, "%s:%d:%s(): %s: 0x%llX\n", __FILE__, __LINE__, __func__, #expr, (unsigned long long)(expr))
 #define DEBUG_STR(str) fprintf(stderr, "%s:%d:%s(): %s: %s\n", __FILE__, __LINE__, __func__, #str, (char*)(str))
 
+struct cfg
+{
+    const char* filename; //Path to mmakefile
+    bool silent; //Suppress echoing of build commands
+    bool force_rebuild; //Always rebuild all targets
+    size_t nrof_targets; //Number of [TARGET ...] arguments passed on the command line
+    const char *const * targets; //Optional list of build targets
+};
+
 enum make_status
 {
     MAKE_OK,            //Build command executed successfully
@@ -29,6 +38,7 @@ void echo_cmd(char *const argv[]);
 int64_t file_mod_time(const char* path);
 #define FILE_MOD_TIME_FILE_NOT_FOUND INT64_MIN
 #define FILE_MOD_TIME_ERROR (INT64_MIN + 1)
+struct cfg options(int argc, char* argv[]);
 
 void debug_print_rule(mmake_rules* rules, const char* target);
 void debug_print_rule(mmake_rules* rules, const char* target)
@@ -57,52 +67,36 @@ void debug_print_rule(mmake_rules* rules, const char* target)
 
 int main(int argc, char* argv[])
 {
-    const char* filename = "mmakefile";
-    int opt;
-    while((opt = getopt(argc, argv, "f:")) != -1)
-    {
-        switch(opt)
-        {
-            case 'f':
-                filename = optarg;
-                break;
-            default:
-                //TODO: Document more options
-                fprintf(stderr, "Usage: mmake [-f MMAKEFILE] [TARGET ...]\n");
-                exit(EXIT_FAILURE);
-                break;
-        }
-    }
-    size_t nrof_targets = argc - optind; //Number of [TARGET ...] arguments passed on the command line
-    const char *const *targets = (const char *const *)&argv[optind];
+    struct cfg cfg = options(argc, argv);
 
-    FILE* file = fopen(filename, "r");
+    FILE* file = fopen(cfg.filename, "r");
     if(!file)
     {
-        perror(filename);
+        perror(cfg.filename);
         exit(EXIT_FAILURE);
     }
 
     mmake_rules* rules = parse_mmakefile(file);
     if(!rules)
     {
-        fprintf(stderr, "mmake: error parsing %s (syntax malformed?)\n", filename);
+        fprintf(stderr, "mmake: error parsing %s (syntax malformed?)\n", cfg.filename);
         fclose(file);
         exit(EXIT_FAILURE);
     }
     fclose(file);
 
     const char* default_target;
-    if(nrof_targets == 0)
+    if(cfg.nrof_targets == 0)
     {
         default_target = get_default_target(rules);
-        targets = &default_target;
-        nrof_targets = 1;
+        cfg.targets = &default_target;
+        cfg.nrof_targets = 1;
     }
 
-    for(size_t i = 0; i < nrof_targets; ++i)
+    //Build targets
+    for(size_t i = 0; i < cfg.nrof_targets; ++i)
     {
-        const char *const target = targets[i];
+        const char *const target = cfg.targets[i];
         switch(make_target(rules, target))
         {
             case NOTHING_TO_BE_DONE:
@@ -293,4 +287,30 @@ int64_t file_mod_time(const char* path)
     }
     //Lab spec only requires second precision
     return statbuf.st_mtim.tv_sec;
+}
+
+/*
+    TODO: document
+*/
+struct cfg options(int argc, char* argv[])
+{
+    struct cfg cfg = { .filename = "mmakefile" };
+    int opt;
+    while((opt = getopt(argc, argv, "f:")) != -1)
+    {
+        switch(opt)
+        {
+            case 'f':
+                cfg.filename = optarg;
+                break;
+            default:
+                //TODO: Document more options
+                fprintf(stderr, "Usage: mmake [-f MMAKEFILE] [TARGET ...]\n");
+                exit(EXIT_FAILURE);
+                break;
+        }
+    }
+    cfg.nrof_targets = argc - optind; //Number of [TARGET ...] arguments passed on the command line
+    cfg.targets = (const char *const *)&argv[optind];
+    return cfg;
 }
