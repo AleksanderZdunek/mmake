@@ -34,7 +34,7 @@ enum make_status
     MAKE_STOP = MAKE_ERROR //Target missing but there's no rule. Handled like other errors.
 };
 
-enum make_status make_target(mmake_rules* rules, const char* target);
+enum make_status make_target(mmake_rules* rules, const char* target, bool silent);
 pid_t exec_command(char *const argv[]);
 bool exec_and_wait(char *const argv[]);
 void echo_cmd(char *const argv[]);
@@ -45,7 +45,6 @@ struct cfg options(int argc, char* argv[]);
 
 int main(int argc, char* argv[])
 {
-    //TODO: Implements silent option
     //TODO: Implement force_rebuild options
     struct cfg cfg = options(argc, argv);
 
@@ -77,7 +76,7 @@ int main(int argc, char* argv[])
     for(size_t i = 0; i < cfg.nrof_targets; ++i)
     {
         const char *const target = cfg.targets[i];
-        switch(make_target(rules, target))
+        switch(make_target(rules, target, cfg.silent))
         {
             case NOTHING_TO_BE_DONE:
                 printf("mmake: Nothing to be done for '%s'.\n", target);
@@ -102,7 +101,7 @@ int main(int argc, char* argv[])
 /*
     TODO: document
 */
-enum make_status make_target(mmake_rules* rules, const char* target)
+enum make_status make_target(mmake_rules* rules, const char* target, bool silent)
 {
     bool rebuild_needed = false;
 
@@ -129,7 +128,7 @@ enum make_status make_target(mmake_rules* rules, const char* target)
         //Recursively traverse the prerequisites tree.
         //NOTE: No safety against prerequisite loops!
         //  A dependency loop will crash with infinite recursion.
-        if(make_target(rules, dep) == MAKE_ERROR) return MAKE_ERROR;
+        if(make_target(rules, dep, silent) == MAKE_ERROR) return MAKE_ERROR;
 
         const int64_t dep_timestamp = file_mod_time(dep);
         if(FILE_MOD_TIME_ERROR == dep_timestamp) return MAKE_ERROR;
@@ -144,8 +143,7 @@ enum make_status make_target(mmake_rules* rules, const char* target)
         //Otherwise parse_mmakefile() would have failed earlier.
         assert(cmd);
         assert(*cmd);
-        //TODO: optionally silence command echoing
-        echo_cmd(cmd);
+        if(!silent) echo_cmd(cmd);
         return exec_and_wait(cmd) ? MAKE_OK : MAKE_ERROR;
     } else
     {
@@ -276,16 +274,19 @@ struct cfg options(int argc, char* argv[])
 {
     struct cfg cfg = { .filename = "mmakefile" };
     int opt;
-    while((opt = getopt(argc, argv, "f:")) != -1)
+    while((opt = getopt(argc, argv, "f:s")) != -1)
     {
         switch(opt)
         {
             case 'f':
                 cfg.filename = optarg;
                 break;
+            case 's':
+                cfg.silent = true;
+                break;
             default:
                 //TODO: Document more options
-                fprintf(stderr, "Usage: mmake [-f MMAKEFILE] [TARGET ...]\n");
+                fprintf(stderr, "Usage: mmake [-f MMAKEFILE] [-s] [TARGET ...]\n");
                 exit(EXIT_FAILURE);
                 break;
         }
