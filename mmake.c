@@ -111,32 +111,52 @@ bool make_target(mmake_rules* rules, const char* target)
 {
     bool rebuild_needed = false;
 
-    int64_t target_timestamp = file_mod_time(target);
+    const int64_t target_timestamp = file_mod_time(target);
     if(FILE_MOD_TIME_ERROR == target_timestamp) return false;
     if(FILE_MOD_TIME_FILE_NOT_FOUND == target_timestamp) rebuild_needed = true;
-
-    DEBUG_EXPR(rebuild_needed);
 
     rule* rule = get_target_rule(rules, target);
     if(!rule)
     {
-        fprintf(stderr, "mmake: *** No rule to make target '%s'.  Stop.\n", target);
-        return false;
+        if(rebuild_needed)
+        {
+            fprintf(stderr, "mmake: *** No rule to make target '%s'.  Stop.\n", target);
+            return false;
+        }
+        return true;
     }
 
-    //TODO: deal with prerequisites
+    //Check dependencies
+    for(const char *const* deps = get_rule_prereq(rule); *deps; ++deps)
+    {
+        const char *const dep = *deps;
+        if(!make_target(rules, dep)) return false; //Something went wrong down the line
+        const int64_t dep_timestamp = file_mod_time(dep);
+        if(FILE_MOD_TIME_ERROR == dep_timestamp) return false;
+        if(target_timestamp <= dep_timestamp) rebuild_needed = true; //Rebuild on equal timestamps to account for only second resolution
+    }
 
-    char *const *cmd = get_rule_cmd(rule);
-    if(!cmd) //TODO: is this condition correct? Should it be !*cmd? Maybe "if(!cmd || !*cmd)"?
-             //The mmakefile parser doesn't parse empty commands, so if there is a rule there should always be a cmd
+    //TODO: optionally force rebuilds
+    if(rebuild_needed)
     {
-        printf("make: Nothing to be done for '%s'.\n", target);
-        return true;
-    } else
-    {
+        char *const *cmd = get_rule_cmd(rule);
+        //If we have a rule we should have a command line.
+        //Otherwise parse_mmakefile() would have failed earlier.
+        assert(cmd);
+        assert(*cmd);
         //TODO: optionally silence command echoing
         echo_cmd(cmd);
         return exec_and_wait(cmd);
+    } else
+    {
+        printf("mmake: Nothing to be done for '%s'.\n", target);
+        return true;
+
+        //TODO: Figure out when and how to print the appropriate user feedback message.
+        //Apparently 'is up to date' should be printed whene there is a rule,
+        //and 'Nothing to be done' when there isn't a rule. But only on top of
+        //the recursion stack?
+        // printf("mmake: '%s' is up to date.\n", target);
     }
 }
 
