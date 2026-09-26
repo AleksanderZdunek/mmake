@@ -213,8 +213,10 @@ bool exec_and_wait(char *const argv[])
     return false;
 }
 
-/*
-    TODO: document
+/**
+    Print command argument array to stdout
+
+    @param argv Null-terminated array of string pointers
 */
 void echo_cmd(const char *const argv[])
 {
