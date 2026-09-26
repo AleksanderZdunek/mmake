@@ -9,8 +9,9 @@ LDFLAGS =
 
 all: $(TARGET)
 
+mmake.o mmake_parser.o: mmake_parser.h
 %.o: %.c Makefile
-	$(CC) $(CFLAGS)   -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(TARGET): $(OBJ)
 	$(CC) $(LDFLAGS) -o $@ $^
