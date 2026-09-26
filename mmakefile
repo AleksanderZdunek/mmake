@@ -1,7 +1,7 @@
 mmake: mmake.o mmake_parser.o
 	gcc -o mmake mmake.o mmake_parser.o
 
-mmake.o: mmake.c
+mmake.o: mmake.c mmake_parser.h
 	gcc -g -std=gnu11 -Werror -Wall -Wextra -Wpedantic -Wmissing-declarations -Wmissing-prototypes -Wold-style-definition -Wswitch-enum -c -o mmake.o mmake.c
 
 mmake_parser.o: mmake_parser.c mmake_parser.h
