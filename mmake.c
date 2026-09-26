@@ -146,9 +146,7 @@ enum make_status make_target(mmake_rules* rules, const char* target, bool force_
     {
         const char *const dep = *deps;
 
-        //Recursively traverse the prerequisites tree.
-        //NOTE: No safety against prerequisite loops!
-        //  A dependency loop will crash with infinite recursion.
+        //Recursively traverse the dependency tree
         if(make_target(rules, dep, force_rebuild, silent) == MAKE_ERROR) return MAKE_ERROR;
 
         const int64_t dep_timestamp = file_mod_time(dep);
