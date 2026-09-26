@@ -264,8 +264,15 @@ int64_t file_mod_time(const char* path)
     return statbuf.st_mtim.tv_sec;
 }
 
-/*
-    TODO: document
+/**
+    Parse command line options.
+    May mutate the order arguments in argv pointer array
+
+    @param argc Number of arguments
+    @param argv Argument pointer array
+
+    @return struct cfg holding options configuration.
+        Does not return but exits with EXIT_FAILURE if incorrect options are passed.
 */
 struct cfg options(int argc, char* argv[])
 {
