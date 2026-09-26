@@ -97,8 +97,31 @@ int main(int argc, char* argv[])
     return EXIT_SUCCESS;
 }
 
-/*
-    TODO: document
+/**
+    Recursively walks a targets prerequisites tree depth first and rebuild
+    prerequisites post-order as needed.
+    A target needs rebuilding if it doesn't exist or if its modificaton
+    timestamp older than at least one of its prerequisites. Modification times
+    are compared with 1 second resolution.
+
+    NOTE that the target prerequisite graph is assumed to be a tree, with no
+    circular dependencies. A prerequisite loop will cause an infinite recursion
+    and crash.
+
+    @param rules mmakefile rule set
+    @param target The target to make
+    @param force_rebuild Always rebuild target regardless of need
+    @param silent Suppress echoing of rebuild command
+
+    @return
+        MAKE_OK             if target build command executed successfully
+        UP_TO_DATE          if target is newer than all of its prerequisites
+        NOTHING_TO_BE_DONE  if target exists but has no rule associated with it
+        MAKE_STOP           if target does not exist but there is no rule to build it
+                                This is a special named case of MAKE_ERROR
+        MAKE_ERROR,         if something went wrong. Including if target or a
+                                prerequisite build command terminated with
+                                non-zero status code.
 */
 enum make_status make_target(mmake_rules* rules, const char* target, bool force_rebuild, bool silent)
 {
