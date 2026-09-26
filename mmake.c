@@ -78,10 +78,10 @@ int main(int argc, char* argv[])
         switch(make_target(rules, target, cfg.force_rebuild, cfg.silent))
         {
             case NOTHING_TO_BE_DONE:
-                printf("mmake: Nothing to be done for '%s'.\n", target);
+                if(!cfg.silent) printf("mmake: Nothing to be done for '%s'.\n", target);
                 break;
             case UP_TO_DATE:
-                printf("mmake: '%s' is up to date.\n", target);
+                if(!cfg.silent) printf("mmake: '%s' is up to date.\n", target);
                 break;
             case MAKE_OK:
                 break;
