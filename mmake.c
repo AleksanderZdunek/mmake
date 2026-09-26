@@ -37,7 +37,7 @@ enum make_status
 enum make_status make_target(mmake_rules* rules, const char* target, bool force_rebuild, bool silent);
 pid_t exec_command(char *const argv[]);
 bool exec_and_wait(char *const argv[]);
-void echo_cmd(char *const argv[]);
+void echo_cmd(const char *const argv[]);
 int64_t file_mod_time(const char* path);
 #define FILE_MOD_TIME_FILE_NOT_FOUND INT64_MIN
 #define FILE_MOD_TIME_ERROR (INT64_MIN + 1)
@@ -140,7 +140,7 @@ enum make_status make_target(mmake_rules* rules, const char* target, bool force_
         //Otherwise parse_mmakefile() would have failed earlier.
         assert(cmd);
         assert(*cmd);
-        if(!silent) echo_cmd(cmd);
+        if(!silent) echo_cmd((const char *const *)cmd);
         return exec_and_wait(cmd) ? MAKE_OK : MAKE_ERROR;
     } else
     {
@@ -216,16 +216,16 @@ bool exec_and_wait(char *const argv[])
 /*
     TODO: document
 */
-void echo_cmd(char *const argv[])
+void echo_cmd(const char *const argv[])
 {
     size_t buf_size = 0;
-    for(char *const *p = argv; *p; ++p)
+    for(const char *const *p = argv; *p; ++p)
     {
         buf_size += strlen(*p) + 1;
     }
     char buf[buf_size];
     char* bp = buf;
-    for(char *const *p = argv; *p; ++p)
+    for(const char *const *p = argv; *p; ++p)
     {
         size_t len = strlen(*p);
         memcpy(bp, *p, len);
