@@ -1,25 +1,69 @@
-.TH mmake 1 "26 September 2026" "Version 1.0"
+.TH mmake 1 "28 September 2026" "Version 1.0"
 
 .SH NAME
-mmake - my make, small simple version of Make
+mmake - my make, small simple version of make(1)
 
 .SH SYNOPSIS
-mmake [-f MMAKEFILE] [-B] [-s] [TARGET ...]
+.BR mmake " [-f MMAKEFILE] [-B] [-s] [TARGET ...]"
 
 .SH DESCRIPTION
-TODO
+Utility to rebuild outdated components in a dependency tree. The dependency tree
+(or forest) is defined by set of rules consisting of a target, a list of
+prerequisite targets, and a command line for building the target. The target
+command is executed only if the target file does not exist or if any prerequisite
+file is newer than the target. Relative age of files is determined by comparing
+the modification time of each file, with 1-second precision.
+.P
+By default
+.B mmake
+reads the rules from a file named
+.IR mmakefile .
+Alternatively the -f option can be used to specify a different
+file. The mmakefile is a limited simplified version of the standard
+.IR makefile .
+The syntax of each rule in the mmakefile is a target followed by a : and a list
+of prerequisite target, followed by a new line specify the command to run for
+the target. The command line must start with a tab character followed by a
+program name and argument list. See below:
+.EX
+
+target: [PREREQUISITE ...]
+	program [ARGUMENT ...]
+
+.EE
+Programs in the target command line should exit with status code 0 to indicate
+success. Any other code will be interpreted by
+.B mmake as a failure.
+.P
+Rule prerequisites may not contain dependency cycles. No safeguard agains this
+is implemented. Comments in the mmakefile are not supported.
+.P
+.B mmake
+may optionally be called with a list of targets to make. If no target is
+specified the first rule in the mmakefile will be run.
+.P
 
 .SH OPTIONS
-TODO
+.TP
+.B -B
+Always rebuild targets.
+.TP
+.BR "-f " MMAKEFILE
+Specify file to read rule set from.
+.TP
+.B -s
+Silent. Do not echo rule commands on execution.
+
 
 .SH SOLUTION
 TODO
 
 .SH EXIT STATUS
 .IP 0
-    TODO
+All targets built successfully or did not need rebuilding.
 .IP 1
-    TODO
+If something went wrong, including if a build command terminated with non-zero
+exit code.
 
 .SH AUTHORS
 Aleksander Zdunek <redacted>@cs.umu.se
