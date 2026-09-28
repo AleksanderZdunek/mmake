@@ -56,7 +56,42 @@ Silent. Do not echo rule commands on execution.
 
 
 .SH SOLUTION
-TODO
+.B mmake
+recursively walks a target's dependency tree depth first, where each prerequisite
+becomes the target for the next recursion depth. Targets are built post-order,
+meaning the target command is executed after the prerequisites list has been
+traversed and before returning from the current recursion level. A target is
+built if it does not exist or if it is older than any of its prerequisites. The
+age and existence of a file is determined by calling stat() (stat(2)) on the
+target or prerequisite name and reading the
+.I st_mtim.tv_sec
+field of the
+.I stat
+structure (stat(3type), timespec(3type)). This represents the modification time
+of the file in UNIX-time seconds.
+.br
+If a target file exists and has a modificaton timestamp newer than all its
+prerequisite files the target is considered up to date.
+.br
+If some prerequisite does not exist after the prerequisite subtree has been
+traversed, it is an error.
+.br
+If a target file exists and there is no rule there is nothing to be done.
+.br
+If a target does not exist and there is no rule to build it, it is an error.
+.br
+Any error aborts further traversal of the dependency tree, unwinds the recursion
+stack and exits with status code 1.
+
+.P
+A target is built by forking (fork(2)) a child from the main
+.B mmake
+process and exec-ing (exec(3)) the target command. The main process then
+immediately await the termination of the child build process before moving on
+with traversing the rest of the dependency tree. No parallelisation is
+implemented. This is the easist way to ensure all prerequisites have been
+updated before building a target. The status code from the child process is read
+to determine the success or failure of the target build.
 
 .SH EXIT STATUS
 .IP 0
