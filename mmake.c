@@ -39,8 +39,10 @@ pid_t exec_command(char *const argv[]);
 bool exec_and_wait(char *const argv[]);
 void echo_cmd(const char *const argv[]);
 int64_t file_mod_time(const char* path);
-#define FILE_MOD_TIME_FILE_NOT_FOUND INT64_MIN
-#define FILE_MOD_TIME_ERROR (INT64_MIN + 1)
+enum {
+    FILE_MOD_TIME_FILE_NOT_FOUND    = INT64_MIN,
+    FILE_MOD_TIME_ERROR             = INT64_MIN + 1
+};
 struct cfg options(int argc, char* argv[]);
 
 int main(int argc, char* argv[])
