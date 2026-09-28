@@ -13,9 +13,6 @@
 #include <stdint.h>
 #include "mmake_parser.h"
 
-#define DEBUG_EXPR(expr) fprintf(stderr, "%s:%d:%s(): %s: 0x%llX\n", __FILE__, __LINE__, __func__, #expr, (unsigned long long)(expr))
-#define DEBUG_STR(str) fprintf(stderr, "%s:%d:%s(): %s: %s\n", __FILE__, __LINE__, __func__, #str, (char*)(str))
-
 struct cfg
 {
     const char* filename; //Path to mmakefile
