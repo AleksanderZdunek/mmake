@@ -1,4 +1,6 @@
-#(C) Aleksander Zdunek <redacted>@cs.umu.se
+# Build mmake
+# Author: Aleksander Zdunek
+# Date: 2026-10-01
 TARGET = mmake
 OBJ = 	mmake.o mmake_parser.o
 

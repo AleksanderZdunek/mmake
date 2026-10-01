@@ -1,5 +1,8 @@
-/*
-    (C) Aleksander Zdunek <redacted>@cs.umu.se
+/** @file
+    Simple limited implementation of Make
+
+    @author Aleksander Zdunek
+    @date 2026-11-01
 */
 #include <stdio.h>
 #include <unistd.h>
