@@ -22,7 +22,7 @@ Alternatively the -f option can be used to specify a different
 file. The mmakefile is a limited simplified version of the standard
 .IR makefile .
 The syntax of each rule in the mmakefile is a target followed by a : and a list
-of prerequisite target, followed by a new line specify the command to run for
+of prerequisite target, followed by a new line specifying the command to run for
 the target. The command line must start with a tab character followed by a
 program name and argument list. See below:
 .EX
@@ -35,7 +35,7 @@ Programs in the target command line should exit with status code 0 to indicate
 success. Any other code will be interpreted by
 .B mmake as a failure.
 .P
-Rule prerequisites may not contain dependency cycles. No safeguard agains this
+Rule prerequisites may not contain dependency cycles. No safeguard against this
 is implemented. Comments in the mmakefile are not supported.
 .P
 .B mmake
@@ -70,7 +70,7 @@ field of the
 structure (stat(3type), timespec(3type)). This represents the modification time
 of the file in UNIX-time seconds.
 .br
-If a target file exists and has a modificaton timestamp newer than all its
+If a target file exists and has a modification timestamp newer than all its
 prerequisite files the target is considered up to date.
 .br
 If some prerequisite does not exist after the prerequisite subtree has been
@@ -89,7 +89,7 @@ A target is built by forking (fork(2)) a child from the main
 process and exec-ing (exec(3)) the target command. The main process then
 immediately await the termination of the child build process before moving on
 with traversing the rest of the dependency tree. No parallelisation is
-implemented. This is the easist way to ensure all prerequisites have been
+implemented. This is the easiest way to ensure all prerequisites have been
 updated before building a target. The status code from the child process is read
 to determine the success or failure of the target build.
 
